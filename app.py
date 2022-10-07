@@ -3,7 +3,6 @@ python -m PyQt5.uic.pyuic -x GUI.ui -o Interfaz.py --> to generate the python
 code from the ui created in PyQtDesigner
 '''
 #************************** GUI Related Imports *******************************#
-from django import http
 from Interface import *
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtCore import pyqtSlot, Qt, QPoint
