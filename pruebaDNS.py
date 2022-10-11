@@ -1,10 +1,10 @@
+from distutils.fancy_getopt import FancyGetopt
 import socket
 import re
 import sys
 import time
 
 def char_hex(numero):
-    numero = int(numero)
     if numero < 16:
         num_hex = hex(numero)
         chars = "\\x0"+num_hex[2:]
@@ -30,85 +30,64 @@ def separar(url, num):
             url_final += chr(len(partes[i+1]))
     return url_final
 
-
-
-def separar1(url, num):
-    partes = url.split(".")
-    chars = char_hex(len(partes[0]))
-    if num ==1:
-        url_final = chars
-    else:
-        url_final = ""
-        chars = chars[2:]
-        for i in range(len(chars)):
-            coso = chr(int(chars[i], 16))
-            url_final += coso
-        url_final = str(len(partes[0]))
-    for i in range(len(partes)):
-        url_final += partes[i]
-        if i == len(partes)-1:
-            break
-        chars = char_hex(len(partes[i+1]))
-        if num ==1:
-            url_final += chars
-        else:
-            '''
-            chars = chars[2:]
-            for i in range(len(chars)):
-                coso = chr(int(chars[i], 16))
-                url_final += coso
-                '''
-            url_final += str(len(partes[i+1]))
-
-    return url_final
-
-def AnsToData(answer, ind, num):
-    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
-    #print("DATA:\n\t"+str(answer[16:]))
-    data = []
+def AnsToData(answer, ind, url):
+    length = int(answer[10+ind]+answer[11+ind])
+    dominio = int(answer[0])*16**2 + int(answer[1])
+    #print("dominio: "+str(dominio))
+    temp = []
+    data = ''
+    tipo = int(answer[ind+2])*10 + int(answer[ind+3])
+    #print("Tipo: "+str(tipo)+"\t length: "+str(length))
+    numero = True
+    i = 0
+    coso = False
     for ans in answer[ind+12:ind+12+length]:
-        if num == 1:
-            print(chr(int(str(ans), 16)))
-            #data.append(chr(int(str(ans), 16)))
-        elif num == 2:
-            print(int(str(ans), 16))
-            #data.append(int(str(ans), 16))
+        temp_dom = int(answer[i])*16**2 + int(answer[1+i])
+        #print(temp_dom)
+        i += 1
+        
+        if tipo == 1:
+            temp.append(int(str(ans)))
+            if i == length:
+                data += str(int(str(ans)))
+                break
+            data += str(int(str(ans)))+ "."
+        else:
+            if numero:
+                j = int(ans)
+                #print("j = "+ str(j))
+                #print(j)
+                if j == 192:
+                    coso = True
+                numero = False
+                continue
+            if coso:
+                if int(ans) == 16 or int(ans)==12:
+                    #print("mismo link")
+                    data += url
+                    continue
+            data += chr(int(str(ans)))
+            temp.append(chr(int(ans)))
+            j -= 1
+            if j == 0:
+                data += "."
+                numero = True
     ind += 12+length
-    print(str(ind)+" de "+ str(len(answer))+"\n")
+    #print("Length: "+str(length))
+    #print("\n"+str(ind)+" de "+ str(len(answer)))
     return [data, ind]
 
-def dns_answer(data, despues):
-    prueba = str(data)
-    prueba = prueba.split(despues)
+
+def dns_answer(data):
     final = []
-    for a in range(len(prueba)-1):
-        final = prueba[a+1]
-        #print(a)
-        #print(final)
-    #print("final: "+ str(final)+"\nPrueba: "+str(prueba))
-    #print("Despues: "+despues)
-    
-    final = final.replace("\\x", " ")
-    lista = final.split(" ")
-    try:
-        lista.remove("")
-    except:
-        pass
-    final = []
-    #print(lista)
-    for char in lista:
-        if len(char) > 2:
-            #print(char[:2])
-            final.append(str(char[:2]))
-            for i in range(len(char[2:])):
-                num = str(hex(ord(char[i+2])))
-            #    print(num[2:] +" = "+ char[i+2])
-                final.append(str(num[2:]))
-        else:
-            #print(char[:2])
-            final.append(str(char[:2]))
-            
-    return final[1:]
+    i = 12
+    while True:
+        valor = int(data[i])
+        i += valor + 1
+        if valor == 0:
+            break
+    final = data[i+4:]
+    return final
 
 def NSLookup(url, servidor, tipo):
     # Filter the URL
@@ -141,63 +120,46 @@ def NSLookup(url, servidor, tipo):
     partes = url.split(".")
 
     url1 = separar(url, 0)
-    print(separar(url, 0))
-    print(separar(url, 1))
     cmd = cmd1 + url1 + cmd2
     cmd = cmd.encode()
     mysocket.send(cmd)
     
     # RECIBIR QUEARY ANSWER
     data = mysocket.recv(2048)  # Receive the response
+    answer = []
+    for a in data:
+        answer.append(str(a))
+        
     print("\nEnviado ("+cmd1 + url1 + cmd2+")")
     
-    answer = dns_answer(data, separar(url, 1))
     #print(formato(dns_answer(data, partes[-1])))
     #print(answer)
-    ind = 4
-    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
-    result = AnsToData(answer, ind, 0)
-    print(result)
+    lista = []
+    for ans in answer:
+        lista.append(chr(int(ans)))
+    ind = 0
+    answer = dns_answer(answer)
+    if partes[0]=="www":
+        url = ""
+        for i in partes[1:]:
+            url += str(i)
+            if i != partes[-1]:
+                url += "."
+        #print(url)
+    while ind+10 < len(answer):
+        result = AnsToData(answer, ind, url)
+        ind = result[1]
+        print(str(result[0])) #+"\t\t indice="+str(ind)
     
-    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
-    #print("DATA:\n\t"+str(answer[16:]))
-    for ans in answer[ind+12:ind+12+length]:
-        #print(chr(int(str(ans), 16)))
-        print(int(str(ans), 16))
-    ind += 12+length
-    print(str(ind)+" de "+ str(len(answer))+"\n")
-    
-    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
-    #print("DATA:\n\t"+str(answer[16:]))
-    for ans in answer[ind+12:ind+12+length]:
-        #print(chr(int(str(ans), 16)))
-        print(int(str(ans), 16))
-    ind += 12+length
-    print(str(ind)+" de "+ str(len(answer))+"\n")
-
-    
-    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
-    #print("DATA:\n\t"+str(answer[16:]))
-    for ans in answer[ind+12:ind+12+length]:
-        #print(chr(int(str(ans), 16)))
-        print(int(str(ans), 16))
-    ind += 12+length
-    print(str(ind)+" de "+ str(len(answer))+"\n")
-    
-    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
-    #print("DATA:\n\t"+str(answer[16:]))
-    for ans in answer[ind+12:ind+12+length]:
-        #print(chr(int(str(ans), 16)))
-        print(int(str(ans), 16))
-    ind += 12+length
-    print(str(ind)+" de "+ str(len(answer))+"\n")
-
-    #print(answer[ind:])
     mysocket.close()
 
 
-#NSLookup('facebook.com', '8.8.8.8', 'A')
-NSLookup('www.yahoo.com', '8.8.8.8', 'A')
-#NSLookup('www.tigo.com.gt', '8.8.8.8', 'A')
-#NSLookup('uvg.instructure.com', '8.8.8.8', 'CNAME')
-#NSLookup('tigo.com.gt', '8.8.8.8', 'A')
+NSLookup('facebook.com', '8.8.8.8', 'A')
+NSLookup('www.yahoo.com', '8.8.8.8', 'NS')
+NSLookup('www.tigo.com.gt', '8.8.8.8', 'A')
+NSLookup('uvg.instructure.com', '8.8.8.8', 'CNAME')
+NSLookup('tigo.com.gt', '8.8.8.8', 'A')
+NSLookup('tigo.com.gt', '8.8.8.8', 'NS')
+url = 'http://llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch.co.uk'
+NSLookup(url, '8.8.8.8', 'A')
+NSLookup(url, '8.8.8.8', 'NS')

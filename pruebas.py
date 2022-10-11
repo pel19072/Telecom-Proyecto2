@@ -43,7 +43,15 @@ def separar(url, num):
                 url_final += coso
     return url_final
 
-print(chr(int("63", 16)))
+val1 = "5c"
+val2 = "54"
+
+temp = "\t"
+print(ord("\t"))
+print(chr(200))
+    #print(str(i)+"  "+chr(i))
+
+
 
 '''print(type(string[2:]))
 chars = string[2:]
