@@ -43,7 +43,7 @@ def separar(url, num):
                 url_final += coso
     return url_final
 
-print(separar("uvg.instructure.com", 1))
+print(chr(int("63", 16)))
 
 '''print(type(string[2:]))
 chars = string[2:]

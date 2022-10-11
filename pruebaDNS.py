@@ -62,16 +62,31 @@ def separar1(url, num):
 
     return url_final
 
+def AnsToData(answer, ind, num):
+    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
+    #print("DATA:\n\t"+str(answer[16:]))
+    data = []
+    for ans in answer[ind+12:ind+12+length]:
+        if num == 1:
+            print(chr(int(str(ans), 16)))
+            #data.append(chr(int(str(ans), 16)))
+        elif num == 2:
+            print(int(str(ans), 16))
+            #data.append(int(str(ans), 16))
+    ind += 12+length
+    print(str(ind)+" de "+ str(len(answer))+"\n")
+    return [data, ind]
+
 def dns_answer(data, despues):
     prueba = str(data)
     prueba = prueba.split(despues)
     final = []
     for a in range(len(prueba)-1):
         final = prueba[a+1]
-        print(a)
-        print(final)
-    print("final: "+ str(final)+"\nPrueba: "+str(prueba))
-    print("Despues: "+despues)
+        #print(a)
+        #print(final)
+    #print("final: "+ str(final)+"\nPrueba: "+str(prueba))
+    #print("Despues: "+despues)
     
     final = final.replace("\\x", " ")
     lista = final.split(" ")
@@ -135,17 +150,54 @@ def NSLookup(url, servidor, tipo):
     # RECIBIR QUEARY ANSWER
     data = mysocket.recv(2048)  # Receive the response
     print("\nEnviado ("+cmd1 + url1 + cmd2+")")
-    print(data)
     
     answer = dns_answer(data, separar(url, 1))
     #print(formato(dns_answer(data, partes[-1])))
-    print(answer)
-    print("length: "+str(int("0x"+ answer[14]+answer[15], 16)))
+    #print(answer)
+    ind = 4
+    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
+    result = AnsToData(answer, ind, 0)
+    print(result)
+    
+    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
+    #print("DATA:\n\t"+str(answer[16:]))
+    for ans in answer[ind+12:ind+12+length]:
+        #print(chr(int(str(ans), 16)))
+        print(int(str(ans), 16))
+    ind += 12+length
+    print(str(ind)+" de "+ str(len(answer))+"\n")
+    
+    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
+    #print("DATA:\n\t"+str(answer[16:]))
+    for ans in answer[ind+12:ind+12+length]:
+        #print(chr(int(str(ans), 16)))
+        print(int(str(ans), 16))
+    ind += 12+length
+    print(str(ind)+" de "+ str(len(answer))+"\n")
+
+    
+    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
+    #print("DATA:\n\t"+str(answer[16:]))
+    for ans in answer[ind+12:ind+12+length]:
+        #print(chr(int(str(ans), 16)))
+        print(int(str(ans), 16))
+    ind += 12+length
+    print(str(ind)+" de "+ str(len(answer))+"\n")
+    
+    length = int("0x"+ answer[10+ind]+answer[11+ind], 16)
+    #print("DATA:\n\t"+str(answer[16:]))
+    for ans in answer[ind+12:ind+12+length]:
+        #print(chr(int(str(ans), 16)))
+        print(int(str(ans), 16))
+    ind += 12+length
+    print(str(ind)+" de "+ str(len(answer))+"\n")
+
+    #print(answer[ind:])
     mysocket.close()
 
 
 #NSLookup('facebook.com', '8.8.8.8', 'A')
-#NSLookup('www.yahoo.com', '8.8.8.8', 'A')
+NSLookup('www.yahoo.com', '8.8.8.8', 'A')
 #NSLookup('www.tigo.com.gt', '8.8.8.8', 'A')
-NSLookup('uvg.instructure.com', '8.8.8.8', 'A')
+#NSLookup('uvg.instructure.com', '8.8.8.8', 'CNAME')
 #NSLookup('tigo.com.gt', '8.8.8.8', 'A')
