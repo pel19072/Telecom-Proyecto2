@@ -1,9 +1,8 @@
 '''
-python -m PyQt5.uic.pyuic -x GUI.ui -o Interfaz.py --> to generate the python
+python -m PyQt6.uic.pyuic -x Interface.ui -o Interface.py --> to generate the python
 code from the ui created in PyQtDesigner
 '''
 #************************** GUI Related Imports *******************************#
-from django import http
 from Interface import *
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtCore import pyqtSlot, Qt, QPoint
@@ -20,10 +19,11 @@ import re
 import threading
 
 #**************************** Variables Globales ******************************#
-url = 'http://zoobank.explorers-log.com/Api?region=es'
+url = "http://info.cern.ch/hypertext/WWW/TheProject.html" #'http://zoobank.explorers-log.com/Api?region=es'
 domain = ''
 url_object = ''
 browsing = 0
+final_page = ''
 
 #************************************* APP ************************************#
 class APP (QtWidgets.QMainWindow, Ui_MainWindow):
@@ -32,7 +32,7 @@ class APP (QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         #******************************* Events *******************************#
         self.pushButton.clicked.connect(self.browse)
-        self.pushButton_2.clicked.connect(self.dns_lookup)
+        #self.pushButton_2.clicked.connect(self.dns_lookup)
         #****************************** Threads *******************************#
         http = threading.Thread(daemon=True,target=http_handler)
         http.start()
@@ -53,17 +53,21 @@ class APP (QtWidgets.QMainWindow, Ui_MainWindow):
             url = url.replace('https://', '')
         if 'http://' in url:
             url = url.replace('http://', '')
-        domain = re.findall('[0-9a-zA-Z\-\_]*\.[0-9a-zA-Z\-\_]*\.[0-9a-zA-Z\-\_]*', url)
-        domain = domain[0]
+        domain = re.findall('.*?/', url) 
+        domain = domain[0][:-1]
+        print(domain)
         url_object = url.replace(domain, '')
         browsing = 1
 
     def dns_lookup(self):
         pass
 
+    def render_html(self, html):
+        self.textEdit.setText(html)
+
 #******************************** External Handlers ********************************#
 def http_handler():
-    global url, domain, url_object, browsing
+    global url, domain, url_object, browsing, final_page, ventanamain
     while (True):
         if not browsing:
             continue
@@ -71,7 +75,6 @@ def http_handler():
         mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         mysocket.bind(('', 51472))
         mysocket.connect((domain, 80))
-
         # Craft the command to be sent with http protocol
         cmd = 'GET {} HTTP/1.1\r\n'.format(url_object)
         cmd += 'Host: {}\r\n'.format(domain)
@@ -83,24 +86,26 @@ def http_handler():
         cmd += 'Accept-Language: en-US,en;q=0.9\r\n\r\n'
         cmd = cmd.encode()
         mysocket.send(cmd)
-
         # Receive the get response
         while True:
-            data = mysocket.recv(512)
+            data = mysocket.recv(1024)
             if not data:
                 break
             try:
                 print(data.decode())
+                final_page = final_page + data.decode()
             except:
                 print('cant decode')
+        print("Final")
         mysocket.close()
+        ventanamain.render_html(final_page)
+        final_page = ''
         browsing = 0
-        
 
 def dns_handler():
     pass
 
-# Inicializa la aplicación y se le da el estilo importado del documento Style.py
+# Inicializa la aplicación
 app = QtWidgets.QApplication([])
 ventanamain=APP()
 ventanamain.show()

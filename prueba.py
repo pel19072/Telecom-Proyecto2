@@ -1,5 +1,6 @@
 import socket
 import re
+from xml import dom
 
 def browser(url):
     # Filter the URL
@@ -7,8 +8,9 @@ def browser(url):
         url = url.replace('https://', '')
     if 'http://' in url:
         url = url.replace('http://', '')
-    domain = re.findall('[0-9a-zA-Z\-\_]*\.[0-9a-zA-Z\-\_]*\.[0-9a-zA-Z\-\_]*', url)
-    domain = domain[0]
+    domain = re.findall('.*/', url)
+    domain = domain[0][:-1]
+    print(domain)
     url_object = url.replace(domain, '')
     
     # Make the socket connection
